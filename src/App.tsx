@@ -44,8 +44,8 @@ export default function App() {
 
         <div ref={resultsRef}>
           {results && (
-            <div className="flex flex-col gap-6">
-              <ResultsPanel results={results} />
+            <div className="flex flex-col gap-8">
+              <ResultsPanel form={form} results={results} />
               <ExportButtons form={form} results={results} />
             </div>
           )}

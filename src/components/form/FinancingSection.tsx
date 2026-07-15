@@ -17,9 +17,11 @@ export function FinancingSection({ form, setField }: Props) {
   const financiado = form.paymentMode === 'financed';
 
   return (
-    <Section step={3} title="Financiamento">
+    <Section step={3} title="Condições de Pagamento">
       <div className="sm:col-span-2">
         <Field label="Forma de pagamento">
+          {/* Futuro: adicionar 'judicial' (parcelamento no processo) — o tipo
+              PaymentMode e o SegmentedControl já suportam novas opções. */}
           <SegmentedControl
             value={form.paymentMode}
             onChange={(paymentMode) => setField({ paymentMode })}

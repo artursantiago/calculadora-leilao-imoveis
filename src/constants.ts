@@ -9,6 +9,7 @@ export const DEFAULTS = {
   itbiPct: 3,
   entradaPct: 20,
   prazoMeses: 420,
+  jurosMensalPct: 1,
   administracaoPct: 10,
   vacanciaPct: 5,
 } as const;
@@ -30,7 +31,7 @@ export const defaultFormState: FormState = {
   paymentMode: 'financed',
   entrada: { mode: 'percent', value: DEFAULTS.entradaPct },
   prazoMeses: DEFAULTS.prazoMeses,
-  taxaJurosMensal: null,
+  taxaJurosMensal: DEFAULTS.jurosMensalPct,
   parcela: null,
 
   aluguel: 0,

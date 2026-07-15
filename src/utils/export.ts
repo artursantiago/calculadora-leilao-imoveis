@@ -11,7 +11,6 @@ import {
   formatPercentFromFraction,
   formatRatio,
 } from './formatters';
-import { buildExecutiveSummary } from './summary';
 
 /** Monta um relatório em texto plano com todos os dados e métricas. */
 export function buildReportText(form: FormState, r: Results): string {
@@ -19,7 +18,6 @@ export function buildReportText(form: FormState, r: Results): string {
   const cashClass = classifyCashFlow(r.fluxoCaixa);
   const discountClass = classifyDiscount(r.descontoPct);
   const icpClass = classifyICP(r.icp);
-  const resumo = buildExecutiveSummary(r);
 
   const linhas = [
     '=== ANÁLISE DE INVESTIMENTO EM LEILÃO (Buy & Hold) ===',
@@ -76,17 +74,13 @@ export function buildReportText(form: FormState, r: Results): string {
     `Fluxo de caixa mensal: ${formatBRL(r.fluxoCaixa)} (${cashClass.emoji} ${cashClass.label})`,
     `Yield bruto: ${formatPercentFromFraction(r.yieldBrutoMensal)} a.m. / ${formatPercentFromFraction(r.yieldBrutoAnual)} a.a. (${yieldClass.emoji} ${yieldClass.label})`,
     `Yield líquido: ${formatPercentFromFraction(r.yieldLiquidoMensal)} a.m. / ${formatPercentFromFraction(r.yieldLiquidoAnual)} a.a.`,
-    `Margem financeira: ${formatBRL(r.margemFinanceira)} (${formatPercentFromFraction(r.descontoPct)})`,
-    `Desconto: ${formatPercentFromFraction(r.descontoPct)} (${discountClass.emoji} ${discountClass.label})`,
+    `Desconto obtido (economia): ${formatBRL(r.margemFinanceira)} — ${formatPercentFromFraction(r.descontoPct)} (${discountClass.emoji} ${discountClass.label})`,
     r.descontoM2 !== null
       ? `Desconto no m²: ${formatPercentFromFraction(r.descontoM2)}`
       : null,
     `Patrimônio controlado: ${formatBRL(r.patrimonioControlado)}`,
     `Alavancagem: ${formatLeverage(r.alavancagem)}`,
     `ICP (cobertura da parcela): ${formatRatio(r.icp)}${icpClass ? ` (${icpClass.emoji} ${icpClass.label})` : ''}`,
-    '',
-    '— RESUMO EXECUTIVO —',
-    resumo,
   ].filter((linha): linha is string => linha !== null);
 
   return linhas.join('\n');
@@ -108,8 +102,13 @@ export async function copyToClipboard(text: string): Promise<boolean> {
  * para a área de transferência (fallback). Retorna se a cópia deu certo.
  */
 export async function openChatGPT(text: string): Promise<boolean> {
-  const copied = await copyToClipboard(text);
-  const url = `https://chat.openai.com/?q=${encodeURIComponent(text)}`;
+  const prompt =
+    'Analise este investimento em imóvel de leilão para a estratégia Buy & Hold ' +
+    '(comprar para alugar e construir patrimônio). Aponte pontos fortes, riscos e ' +
+    'se vale a pena, considerando yield, fluxo de caixa, desconto e alavancagem:\n\n' +
+    text;
+  const copied = await copyToClipboard(prompt);
+  const url = `https://chat.openai.com/?q=${encodeURIComponent(prompt)}`;
   window.open(url, '_blank', 'noopener,noreferrer');
   return copied;
 }
