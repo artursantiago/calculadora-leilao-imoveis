@@ -31,7 +31,6 @@ export default function App() {
           <CostsSection form={form} setField={setField} />
           <FinancingSection form={form} setField={setField} />
           <RevenueSection form={form} setField={setField} />
-          <BidStrategySection form={form} setField={setField} />
         </div>
 
         <div className="my-8 flex justify-center">
@@ -48,6 +47,7 @@ export default function App() {
           {results && (
             <div className="flex flex-col gap-8">
               <ResultsPanel form={form} results={results} />
+              <BidStrategySection form={form} setField={setField} />
               <ExportButtons form={form} results={results} />
             </div>
           )}

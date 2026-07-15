@@ -160,17 +160,40 @@ export function BidStrategySection({ form, setField }: Props) {
           Preencha o aluguel esperado e o valor de mercado (ou avaliação do banco) para
           calcular o Lance Máximo.
         </p>
-      ) : bid.maxLance === null ? (
+      ) : bid.status === 'unbounded' ? (
         <p className="mt-4 rounded-lg bg-white px-4 py-3 text-sm text-slate-500">
           Os critérios atuais não limitam o lance na faixa analisada.
         </p>
+      ) : bid.status === 'infeasible' ? (
+        <div className="mt-5 flex flex-col gap-3">
+          <ClassificationBadge classification={bid.statusBadge} />
+          <p className="text-sm text-slate-600">
+            Nenhum valor de lance atende a todos os critérios selecionados. Ajuste os
+            critérios, revise o aluguel esperado ou reduza os custos de aquisição.
+          </p>
+          <div className="rounded-lg bg-white px-4 py-3">
+            <p className="mb-2 text-sm font-semibold text-slate-700">
+              Mesmo no menor lance possível:
+            </p>
+            <ul className="flex flex-col gap-1 text-sm">
+              {bid.justification.map((j) => (
+                <li
+                  key={j.key}
+                  className={j.ok ? 'text-slate-500' : 'font-medium text-slate-800'}
+                >
+                  {j.ok ? '✅' : '❌'} {j.detail}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       ) : (
         <div className="mt-5 flex flex-col gap-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <Tile label="Lance atual" value={formatBRL(bid.lanceAtual)} />
             <Tile
               label="Lance máximo recomendado"
-              value={formatBRL(bid.maxLance)}
+              value={formatBRL(bid.maxLance ?? 0)}
               valueClass={maxColor}
             />
             <Tile
@@ -184,13 +207,11 @@ export function BidStrategySection({ form, setField }: Props) {
             <ClassificationBadge classification={bid.statusBadge} />
           </div>
 
-          <BidBar maxLance={bid.maxLance} lanceAtual={bid.lanceAtual} />
+          <BidBar maxLance={bid.maxLance ?? 0} lanceAtual={bid.lanceAtual} />
 
           <div className="rounded-lg bg-white px-4 py-3">
             <p className="mb-2 text-sm font-semibold text-slate-700">
-              {bid.maxLance <= 0
-                ? 'Nenhum lance atende aos critérios porque:'
-                : 'O Lance Máximo foi limitado porque, ao subir mais:'}
+              O Lance Máximo foi limitado porque, ao subir mais:
             </p>
             <ul className="flex flex-col gap-1 text-sm">
               {bid.justification.map((j) => (

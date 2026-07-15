@@ -2,7 +2,7 @@ import type { Classification, FormState } from '../types';
 import { computeResults, effectiveMarketValue } from './calculations';
 import { formatBRL, formatPercentValue, formatRatio } from './formatters';
 
-export type BidStatus = 'safe' | 'near' | 'over' | 'none' | 'unbounded';
+export type BidStatus = 'safe' | 'near' | 'over' | 'none' | 'unbounded' | 'infeasible';
 
 export interface CriterionStatus {
   key: string;
@@ -57,29 +57,37 @@ function passesAll(form: FormState, lance: number, enabled: Record<string, boole
   return CRITERIA.every((c) => !enabled[c.key] || checks[c.key]);
 }
 
+// Lance mínimo usado para avaliar a viabilidade. Não pode ser 0: em lance 0 o
+// investimento total é 0 e o yield/ICP ficam degenerados (guardas de divisão
+// por zero), o que falsamente reprovaria os critérios.
+const LOW = 1;
+
 /**
  * Como todos os critérios pioram monotonicamente conforme o lance sobe,
  * o maior lance que atende a todos é encontrado por busca binária.
- * Retorna { maxLance, unbounded }.
+ * - feasible=false → nem o menor lance atende aos critérios.
+ * - unbounded=true → os critérios não limitam o lance na faixa analisada.
  */
 function findMaxLance(
   form: FormState,
   enabled: Record<string, boolean>,
-): { maxLance: number; unbounded: boolean } {
-  if (!passesAll(form, 0, enabled)) return { maxLance: 0, unbounded: false };
+): { maxLance: number; unbounded: boolean; feasible: boolean } {
+  if (!passesAll(form, LOW, enabled)) {
+    return { maxLance: 0, unbounded: false, feasible: false };
+  }
 
   const base = Math.max(effectiveMarketValue(form), form.arrematacao, 1);
   const hi = base * 5 + 1_000_000;
-  if (passesAll(form, hi, enabled)) return { maxLance: hi, unbounded: true };
+  if (passesAll(form, hi, enabled)) return { maxLance: hi, unbounded: true, feasible: true };
 
-  let lo = 0;
+  let lo = LOW;
   let high = hi;
   for (let i = 0; i < 60; i++) {
     const mid = (lo + high) / 2;
     if (passesAll(form, mid, enabled)) lo = mid;
     else high = mid;
   }
-  return { maxLance: Math.floor(lo), unbounded: false };
+  return { maxLance: Math.floor(lo), unbounded: false, feasible: true };
 }
 
 function detailFor(
@@ -115,6 +123,7 @@ const STATUS_BADGE: Record<BidStatus, Classification> = {
   near: { label: 'Próximo do limite', emoji: '🟡', color: 'yellow' },
   over: { label: 'Limite ultrapassado', emoji: '🔴', color: 'red' },
   unbounded: { label: 'Critérios não limitam o lance', emoji: '🟢', color: 'green' },
+  infeasible: { label: 'Nenhum lance atende aos critérios', emoji: '🔴', color: 'red' },
   none: { label: 'Nenhum critério habilitado', emoji: '⚪', color: 'orange' },
 };
 
@@ -138,11 +147,11 @@ export function computeBidStrategy(form: FormState): BidStrategyResult {
     };
   }
 
-  const { maxLance, unbounded } = findMaxLance(form, enabled);
+  const { maxLance, unbounded, feasible } = findMaxLance(form, enabled);
 
-  // Justificativa: avalia os critérios logo ACIMA do lance máximo para saber
-  // qual seria o primeiro violado (ou, se maxLance = 0, exatamente em 0).
-  const probe = maxLance === 0 ? 0 : maxLance + Math.max(maxLance * 0.005, 100);
+  // Justificativa: se inviável, mostra quais critérios falham já no menor lance;
+  // caso contrário, avalia logo ACIMA do máximo para saber qual seria violado.
+  const probe = !feasible ? LOW : maxLance + Math.max(maxLance * 0.005, 100);
   const checksAtProbe = checkCriteria(form, probe);
   const justification: CriterionStatus[] = CRITERIA.filter((c) => enabled[c.key]).map((c) => ({
     key: c.key,
@@ -152,7 +161,8 @@ export function computeBidStrategy(form: FormState): BidStrategyResult {
   }));
 
   let status: BidStatus;
-  if (unbounded) status = 'unbounded';
+  if (!feasible) status = 'infeasible';
+  else if (unbounded) status = 'unbounded';
   else if (lanceAtual > maxLance) status = 'over';
   else if (maxLance > 0 && lanceAtual >= maxLance * 0.95) status = 'near';
   else status = 'safe';
@@ -162,7 +172,7 @@ export function computeBidStrategy(form: FormState): BidStrategyResult {
     hasCriteria,
     lanceAtual,
     maxLance: unbounded ? null : maxLance,
-    margem: unbounded ? null : maxLance - lanceAtual,
+    margem: feasible && !unbounded ? maxLance - lanceAtual : null,
     status,
     statusBadge: STATUS_BADGE[status],
     justification,
