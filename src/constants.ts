@@ -49,44 +49,45 @@ export const defaultFormState: FormState = {
 // As faixas são avaliadas da maior para a menor: a primeira em que
 // `valor >= min` define a classificação.
 // ---------------------------------------------------------------------------
-interface Range extends Classification {
+export interface ScaleRange extends Classification {
   min: number;
+  range: string; // texto da faixa para exibição na régua
 }
 
 // Yield bruto mensal — comparado em PONTOS PERCENTUAIS (ex.: 1.0 = 1,00%).
-export const YIELD_RANGES: Range[] = [
-  { min: 1.0, label: 'Excelente', emoji: '🟢', color: 'green' },
-  { min: 0.8, label: 'Muito Bom', emoji: '🟢', color: 'green' },
-  { min: 0.7, label: 'Bom', emoji: '🟡', color: 'yellow' },
-  { min: 0.6, label: 'Atenção', emoji: '🟠', color: 'orange' },
-  { min: -Infinity, label: 'Ruim', emoji: '🔴', color: 'red' },
+export const YIELD_RANGES: ScaleRange[] = [
+  { min: 1.0, range: '≥ 1,00%', label: 'Excelente', emoji: '🟢', color: 'green' },
+  { min: 0.8, range: '0,80% – 0,99%', label: 'Muito Bom', emoji: '🟢', color: 'green' },
+  { min: 0.7, range: '0,70% – 0,79%', label: 'Bom', emoji: '🟡', color: 'yellow' },
+  { min: 0.6, range: '0,60% – 0,69%', label: 'Atenção', emoji: '🟠', color: 'orange' },
+  { min: -Infinity, range: '< 0,60%', label: 'Ruim', emoji: '🔴', color: 'red' },
 ];
 
 // Fluxo de caixa mensal — comparado em R$.
-export const CASH_FLOW_RANGES: Range[] = [
-  { min: 300, label: 'Excelente', emoji: '🟢', color: 'green' },
-  { min: 100, label: 'Bom', emoji: '🟢', color: 'green' },
-  { min: -100, label: 'Neutro', emoji: '🟡', color: 'yellow' },
-  { min: -300, label: 'Atenção', emoji: '🟠', color: 'orange' },
-  { min: -Infinity, label: 'Ruim', emoji: '🔴', color: 'red' },
+export const CASH_FLOW_RANGES: ScaleRange[] = [
+  { min: 300, range: '> R$ 300', label: 'Excelente', emoji: '🟢', color: 'green' },
+  { min: 100, range: 'R$ 100 – R$ 300', label: 'Bom', emoji: '🟢', color: 'green' },
+  { min: -100, range: '-R$ 100 – R$ 100', label: 'Neutro', emoji: '🟡', color: 'yellow' },
+  { min: -300, range: '-R$ 300 – -R$ 100', label: 'Atenção', emoji: '🟠', color: 'orange' },
+  { min: -Infinity, range: '< -R$ 300', label: 'Ruim', emoji: '🔴', color: 'red' },
 ];
 
 // Desconto — comparado em PONTOS PERCENTUAIS (ex.: 20 = 20%).
-export const DISCOUNT_RANGES: Range[] = [
-  { min: 20, label: 'Excelente', emoji: '🟢', color: 'green' },
-  { min: 15, label: 'Muito Bom', emoji: '🟢', color: 'green' },
-  { min: 10, label: 'Bom', emoji: '🟡', color: 'yellow' },
-  { min: 5, label: 'Atenção', emoji: '🟠', color: 'orange' },
-  { min: -Infinity, label: 'Pequeno', emoji: '🔴', color: 'red' },
+export const DISCOUNT_RANGES: ScaleRange[] = [
+  { min: 20, range: '> 20%', label: 'Excelente', emoji: '🟢', color: 'green' },
+  { min: 15, range: '15% – 20%', label: 'Muito Bom', emoji: '🟢', color: 'green' },
+  { min: 10, range: '10% – 15%', label: 'Bom', emoji: '🟡', color: 'yellow' },
+  { min: 5, range: '5% – 10%', label: 'Atenção', emoji: '🟠', color: 'orange' },
+  { min: -Infinity, range: '< 5%', label: 'Pequeno', emoji: '🔴', color: 'red' },
 ];
 
 // Índice de Cobertura da Parcela (ICP) — razão receita líquida / parcela.
-export const ICP_RANGES: Range[] = [
-  { min: 1.1, label: 'Excelente', emoji: '🟢', color: 'green' },
-  { min: 1.0, label: 'Bom', emoji: '🟢', color: 'green' },
-  { min: 0.9, label: 'Aceitável', emoji: '🟡', color: 'yellow' },
-  { min: 0.8, label: 'Atenção', emoji: '🟠', color: 'orange' },
-  { min: -Infinity, label: 'Ruim', emoji: '🔴', color: 'red' },
+export const ICP_RANGES: ScaleRange[] = [
+  { min: 1.1, range: '≥ 1,10', label: 'Excelente', emoji: '🟢', color: 'green' },
+  { min: 1.0, range: '1,00 – 1,09', label: 'Bom', emoji: '🟢', color: 'green' },
+  { min: 0.9, range: '0,90 – 0,99', label: 'Aceitável', emoji: '🟡', color: 'yellow' },
+  { min: 0.8, range: '0,80 – 0,89', label: 'Atenção', emoji: '🟠', color: 'orange' },
+  { min: -Infinity, range: '< 0,80', label: 'Ruim', emoji: '🔴', color: 'red' },
 ];
 
 // Classes utilitárias Tailwind por cor (badges).

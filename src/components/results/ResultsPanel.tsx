@@ -1,3 +1,9 @@
+import {
+  CASH_FLOW_RANGES,
+  DISCOUNT_RANGES,
+  ICP_RANGES,
+  YIELD_RANGES,
+} from '../../constants';
 import type { FormState, Results } from '../../types';
 import {
   classifyCashFlow,
@@ -13,6 +19,7 @@ import {
   formatRatio,
 } from '../../utils/formatters';
 import { ClassificationBadge } from './ClassificationBadge';
+import { InterpretPanel } from './InterpretPanel';
 import { CardDivider, ResultCard, ResultGroup, Row } from './ResultCard';
 
 const TIPS = {
@@ -24,11 +31,37 @@ const TIPS = {
     'Rentabilidade mensal considerando apenas o aluguel bruto dividido pelo investimento total realizado.',
   yieldLiquido:
     'Considera o aluguel descontando administração, IPTU, condomínio, seguro, vacância e manutenção, dividido pelo investimento total.',
-  icp: 'Índice de Cobertura da Parcela: quanto da parcela do financiamento é coberto pela receita líquida do aluguel. Acima de 1,00 o aluguel cobre a parcela.',
+  fluxoCaixa:
+    'A sobra (ou falta) de caixa por mês depois de pagar a parcela do financiamento com a receita líquida do aluguel.',
+  icp: 'Mede quanto da parcela do financiamento é coberta pela receita líquida do aluguel. Acima de 1,10 sobra dinheiro; em 1,00 o aluguel paga exatamente a parcela; abaixo de 1,00 será necessário complementar mensalmente.',
   desconto:
-    'O quanto você economiza comprando abaixo do valor de mercado: diferença entre o valor de mercado e o investimento total.',
+    'O quanto você economiza comprando abaixo do valor de mercado: diferença entre o valor de mercado e o investimento total, sobre o valor de mercado.',
   alavancagem:
     'Quantas vezes o patrimônio controlado supera o capital que você efetivamente investiu.',
+};
+
+const LEVERS = {
+  yieldBruto: ['Aluguel maior', 'Menor valor de arrematação', 'Menores custos de aquisição'],
+  yieldLiquido: [
+    'Aluguel maior',
+    'Menor arrematação e custos de aquisição',
+    'Menores custos recorrentes (IPTU, condomínio, seguro, administração, vacância, manutenção)',
+  ],
+  fluxoCaixa: [
+    'Aluguel maior',
+    'Parcela menor (mais entrada, prazo maior ou juros menor)',
+    'Menores custos recorrentes',
+  ],
+  icp: ['Aluguel maior', 'Parcela menor', 'Menores custos recorrentes'],
+  desconto: [
+    'Arrematar por um valor menor',
+    'Reduzir os custos de aquisição',
+    'Comprar imóvel com maior valor de mercado',
+  ],
+  alavancagem: [
+    'Menor capital inicial (mais financiamento / menor entrada)',
+    'Comprar com maior desconto sobre o valor de mercado',
+  ],
 };
 
 function reservaLabel(form: FormState): string {
@@ -152,9 +185,20 @@ export function ResultsPanel({ form, results }: { form: FormState; results: Resu
           <div className="mt-1">
             <ClassificationBadge classification={cashClass} />
           </div>
+          <InterpretPanel
+            concept={TIPS.fluxoCaixa}
+            formula={{
+              a: { label: 'Receita líquida', value: formatBRL(r.receitaLiquida) },
+              op: '−',
+              b: { label: 'Parcela', value: formatBRL(r.parcela) },
+              result: { label: 'Fluxo', value: formatBRL(r.fluxoCaixa) },
+            }}
+            scale={{ rows: CASH_FLOW_RANGES, activeLabel: cashClass.label }}
+            levers={LEVERS.fluxoCaixa}
+          />
         </ResultCard>
 
-        <ResultCard title="Yield Bruto" tooltip={TIPS.yieldBruto}>
+        <ResultCard title="Yield Bruto">
           <div className="flex flex-col gap-1">
             <Row label="Mensal" value={formatPercentFromFraction(r.yieldBrutoMensal)} strong />
             <Row label="Anual" value={formatPercentFromFraction(r.yieldBrutoAnual)} />
@@ -162,9 +206,20 @@ export function ResultsPanel({ form, results }: { form: FormState; results: Resu
           <div className="mt-1">
             <ClassificationBadge classification={yieldClass} />
           </div>
+          <InterpretPanel
+            concept={TIPS.yieldBruto}
+            formula={{
+              a: { label: 'Aluguel', value: formatBRL(form.aluguel) },
+              op: '÷',
+              b: { label: 'Investimento total', value: formatBRL(r.investimentoTotal) },
+              result: { label: 'Yield mensal', value: formatPercentFromFraction(r.yieldBrutoMensal) },
+            }}
+            scale={{ rows: YIELD_RANGES, activeLabel: yieldClass.label }}
+            levers={LEVERS.yieldBruto}
+          />
         </ResultCard>
 
-        <ResultCard title="Yield Líquido" tooltip={TIPS.yieldLiquido}>
+        <ResultCard title="Yield Líquido">
           <div className="flex flex-col gap-1">
             <Row
               label="Mensal"
@@ -173,15 +228,37 @@ export function ResultsPanel({ form, results }: { form: FormState; results: Resu
             />
             <Row label="Anual" value={formatPercentFromFraction(r.yieldLiquidoAnual)} />
           </div>
+          <InterpretPanel
+            concept={TIPS.yieldLiquido}
+            formula={{
+              a: { label: 'Receita líquida', value: formatBRL(r.receitaLiquida) },
+              op: '÷',
+              b: { label: 'Investimento total', value: formatBRL(r.investimentoTotal) },
+              result: {
+                label: 'Yield mensal',
+                value: formatPercentFromFraction(r.yieldLiquidoMensal),
+              },
+            }}
+            levers={LEVERS.yieldLiquido}
+          />
         </ResultCard>
 
-        <ResultCard
-          title="Índice de Cobertura da Parcela"
-          value={formatRatio(r.icp)}
-          tooltip={TIPS.icp}
-        >
+        <ResultCard title="Índice de Cobertura da Parcela" value={formatRatio(r.icp)}>
           {icpClass ? (
-            <ClassificationBadge classification={icpClass} />
+            <>
+              <ClassificationBadge classification={icpClass} />
+              <InterpretPanel
+                concept={TIPS.icp}
+                formula={{
+                  a: { label: 'Receita líquida', value: formatBRL(r.receitaLiquida) },
+                  op: '÷',
+                  b: { label: 'Parcela', value: formatBRL(r.parcela) },
+                  result: { label: 'ICP', value: formatRatio(r.icp) },
+                }}
+                scale={{ rows: ICP_RANGES, activeLabel: icpClass.label }}
+                levers={LEVERS.icp}
+              />
+            </>
           ) : (
             <span className="text-sm text-slate-400">
               {r.financiado ? 'Sem parcela informada' : 'Compra à vista (sem financiamento)'}
@@ -192,20 +269,28 @@ export function ResultsPanel({ form, results }: { form: FormState; results: Resu
 
       {/* ---------------------------------------------------------------- */}
       <ResultGroup icon="🏠" title="Patrimônio">
-        <ResultCard
-          title="Alavancagem"
-          value={formatLeverage(r.alavancagem)}
-          tooltip={TIPS.alavancagem}
-        >
+        <ResultCard title="Alavancagem" value={formatLeverage(r.alavancagem)}>
           <div className="flex flex-col gap-1">
             <Row label="Capital investido" value={formatBRL(r.capitalInicial)} />
             <Row label="Patrimônio controlado" value={formatBRL(r.patrimonioControlado)} />
           </div>
           {r.alavancagem !== null && (
-            <span className="mt-1 text-xs text-slate-400">
-              Você controla um patrimônio {formatLeverage(r.alavancagem)} maior que o capital
-              investido.
-            </span>
+            <>
+              <span className="mt-1 text-xs text-slate-400">
+                Você controla um patrimônio {formatLeverage(r.alavancagem)} maior que o capital
+                investido.
+              </span>
+              <InterpretPanel
+                concept={TIPS.alavancagem}
+                formula={{
+                  a: { label: 'Patrimônio controlado', value: formatBRL(r.patrimonioControlado) },
+                  op: '÷',
+                  b: { label: 'Capital investido', value: formatBRL(r.capitalInicial) },
+                  result: { label: 'Alavancagem', value: formatLeverage(r.alavancagem) },
+                }}
+                levers={LEVERS.alavancagem}
+              />
+            </>
           )}
         </ResultCard>
 
@@ -213,7 +298,6 @@ export function ResultsPanel({ form, results }: { form: FormState; results: Resu
           title="Desconto Obtido"
           value={formatPercentFromFraction(r.descontoPct)}
           valueClass={r.margemFinanceira >= 0 ? 'text-emerald-600' : 'text-red-600'}
-          tooltip={TIPS.desconto}
         >
           <div className="flex flex-col gap-1">
             <Row label="Valor de mercado" value={formatBRL(r.valorMercadoEfetivo)} />
@@ -224,6 +308,17 @@ export function ResultsPanel({ form, results }: { form: FormState; results: Resu
           <div className="mt-1">
             <ClassificationBadge classification={discountClass} />
           </div>
+          <InterpretPanel
+            concept={TIPS.desconto}
+            formula={{
+              a: { label: 'Economia', value: formatBRL(r.margemFinanceira) },
+              op: '÷',
+              b: { label: 'Valor de mercado', value: formatBRL(r.valorMercadoEfetivo) },
+              result: { label: 'Desconto', value: formatPercentFromFraction(r.descontoPct) },
+            }}
+            scale={{ rows: DISCOUNT_RANGES, activeLabel: discountClass.label }}
+            levers={LEVERS.desconto}
+          />
         </ResultCard>
 
         <ResultCard title="Condições do Imóvel">

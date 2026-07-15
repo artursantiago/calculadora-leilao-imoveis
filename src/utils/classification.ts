@@ -3,17 +3,14 @@ import {
   DISCOUNT_RANGES,
   ICP_RANGES,
   YIELD_RANGES,
+  type ScaleRange,
 } from '../constants';
 import type { Classification } from '../types';
 
-interface Range extends Classification {
-  min: number;
-}
-
 /** Seleciona a primeira faixa (da maior para a menor) em que valor >= min. */
-function classify(ranges: Range[], value: number): Classification {
+function classify(ranges: ScaleRange[], value: number): Classification {
   const match = ranges.find((r) => value >= r.min) ?? ranges[ranges.length - 1];
-  const { min: _min, ...classification } = match;
+  const { min: _min, range: _range, ...classification } = match;
   return classification;
 }
 
