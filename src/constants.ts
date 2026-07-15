@@ -42,6 +42,13 @@ export const defaultFormState: FormState = {
   reservaManutencao: { mode: 'value', value: 0 },
   vacancia: DEFAULTS.vacanciaPct,
   primeiroAluguelImobiliaria: true,
+
+  bidStrategy: {
+    fluxoMin: { enabled: true, min: 0 }, // fluxo ≥ R$ 0
+    yieldLiquidoMin: { enabled: true, min: 7 }, // ≥ 7% a.a.
+    descontoMin: { enabled: true, min: 15 }, // ≥ 15%
+    icpMin: { enabled: true, min: 1.0 }, // ≥ 1,00
+  },
 };
 
 // ---------------------------------------------------------------------------

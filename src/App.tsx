@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { Header } from './components/Header';
+import { BidStrategySection } from './components/BidStrategySection';
 import { CostsSection } from './components/form/CostsSection';
 import { FinancingSection } from './components/form/FinancingSection';
 import { PropertySection } from './components/form/PropertySection';
@@ -30,6 +31,7 @@ export default function App() {
           <CostsSection form={form} setField={setField} />
           <FinancingSection form={form} setField={setField} />
           <RevenueSection form={form} setField={setField} />
+          <BidStrategySection form={form} setField={setField} />
         </div>
 
         <div className="my-8 flex justify-center">

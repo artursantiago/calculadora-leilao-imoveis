@@ -10,6 +10,19 @@ export interface DualAmount {
 
 export type PaymentMode = 'cash' | 'financed';
 
+/** Um critério da estratégia de lance: habilitado + valor mínimo aceitável. */
+export interface BidCriterion {
+  enabled: boolean;
+  min: number;
+}
+
+export interface BidStrategy {
+  fluxoMin: BidCriterion; // R$
+  yieldLiquidoMin: BidCriterion; // % ao ano
+  descontoMin: BidCriterion; // %
+  icpMin: BidCriterion; // razão
+}
+
 export interface FormState {
   // 1. Informações do imóvel
   arrematacao: number;
@@ -42,6 +55,9 @@ export interface FormState {
   reservaManutencao: DualAmount; // % do aluguel OU R$
   vacancia: number; // %
   primeiroAluguelImobiliaria: boolean; // 1º aluguel fica com a imobiliária
+
+  // 5. Estratégia de lance (critérios do investidor)
+  bidStrategy: BidStrategy;
 }
 
 export interface Results {
