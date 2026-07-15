@@ -8,28 +8,29 @@ export interface DualAmount {
   value: number;
 }
 
+export type PaymentMode = 'cash' | 'financed';
+
 export interface FormState {
   // 1. Informações do imóvel
   arrematacao: number;
   avaliacaoBanco: number;
   valorMercado: number | null; // null → usar avaliacaoBanco
   area: number;
-  cidade: string;
-  bairro: string;
 
-  // 2. Custos da aquisição (comissão/assessoria sobre a arrematação)
+  // 2. Custos da aquisição (comissão/assessoria/ITBI sobre a arrematação)
   comissao: DualAmount;
   assessoria: DualAmount;
   reforma: number;
   desocupacao: number;
-  itbi: number;
+  itbi: DualAmount; // % da arrematação (padrão) OU R$
   registro: number;
   outros: number;
 
-  // 3. Financiamento (entrada sobre a arrematação)
-  entrada: DualAmount;
+  // 3. Financiamento
+  paymentMode: PaymentMode; // à vista ou financiado
+  entrada: DualAmount; // sobre a arrematação
   prazoMeses: number;
-  taxaJurosAnual: number | null; // % ao ano
+  taxaJurosMensal: number | null; // % ao mês
   parcela: number | null; // se informada, tem prioridade
 
   // 4. Receita
@@ -40,17 +41,27 @@ export interface FormState {
   seguro: number;
   reservaManutencao: DualAmount; // % do aluguel OU R$
   vacancia: number; // %
+  primeiroAluguelImobiliaria: boolean; // 1º aluguel fica com a imobiliária
 }
 
 export interface Results {
+  financiado: boolean;
+
   // Custos derivados
   comissaoValor: number;
   assessoriaValor: number;
+  itbiValor: number;
   entradaValor: number;
   valorFinanciado: number;
 
   investimentoTotal: number;
   capitalInicial: number;
+  receitaPerdidaPrimeiroMes: number; // 1º aluguel destinado à imobiliária
+
+  // Preço por m² (null quando a área não é informada)
+  precoM2Arrematacao: number | null;
+  precoM2Mercado: number | null;
+  descontoM2: number | null; // fração
 
   // Receita
   administracaoValor: number;

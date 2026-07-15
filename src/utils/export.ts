@@ -25,26 +25,35 @@ export function buildReportText(form: FormState, r: Results): string {
     '=== ANÁLISE DE INVESTIMENTO EM LEILÃO (Buy & Hold) ===',
     '',
     '— IMÓVEL —',
-    `Cidade/Bairro: ${form.cidade || '-'} / ${form.bairro || '-'}`,
     `Área: ${form.area || '-'} m²`,
     `Valor de arrematação: ${formatBRL(form.arrematacao)}`,
     `Avaliação do banco: ${formatBRL(form.avaliacaoBanco)}`,
     `Valor de mercado: ${formatBRL(r.valorMercadoEfetivo)}`,
+    r.precoM2Arrematacao !== null
+      ? `Preço/m²: ${formatBRL(r.precoM2Arrematacao)} (arrematação) vs ${formatBRL(
+          r.precoM2Mercado ?? 0,
+        )} (mercado)`
+      : 'Preço/m²: informe a área',
     '',
     '— CUSTOS DE AQUISIÇÃO —',
     `Comissão do leiloeiro: ${formatBRL(r.comissaoValor)}`,
     `Assessoria: ${formatBRL(r.assessoriaValor)}`,
     `Reforma: ${formatBRL(form.reforma)}`,
     `Desocupação: ${formatBRL(form.desocupacao)}`,
-    `ITBI: ${formatBRL(form.itbi)}`,
+    `ITBI: ${formatBRL(r.itbiValor)}`,
     `Registro: ${formatBRL(form.registro)}`,
     `Outros: ${formatBRL(form.outros)}`,
     '',
     '— FINANCIAMENTO —',
-    `Entrada: ${formatBRL(r.entradaValor)}`,
-    `Valor financiado: ${formatBRL(r.valorFinanciado)}`,
-    `Prazo: ${form.prazoMeses} meses`,
-    `Parcela mensal: ${formatBRL(r.parcela)}`,
+    `Forma de pagamento: ${r.financiado ? 'Financiado' : 'À vista'}`,
+    ...(r.financiado
+      ? [
+          `Entrada: ${formatBRL(r.entradaValor)}`,
+          `Valor financiado: ${formatBRL(r.valorFinanciado)}`,
+          `Prazo: ${form.prazoMeses} meses`,
+          `Parcela mensal: ${formatBRL(r.parcela)}`,
+        ]
+      : []),
     '',
     '— RECEITA —',
     `Aluguel esperado: ${formatBRL(form.aluguel)}`,
@@ -54,6 +63,11 @@ export function buildReportText(form: FormState, r: Results): string {
     `Seguro: ${formatBRL(form.seguro)}`,
     `Reserva manutenção: ${formatBRL(r.reservaManutencaoValor)}`,
     `Vacância: ${formatBRL(r.vacanciaValor)}`,
+    `1º aluguel para a imobiliária: ${
+      r.receitaPerdidaPrimeiroMes > 0
+        ? `Sim (${formatBRL(r.receitaPerdidaPrimeiroMes)})`
+        : 'Não'
+    }`,
     '',
     '— MÉTRICAS —',
     `Investimento total: ${formatBRL(r.investimentoTotal)}`,
@@ -64,13 +78,16 @@ export function buildReportText(form: FormState, r: Results): string {
     `Yield líquido: ${formatPercentFromFraction(r.yieldLiquidoMensal)} a.m. / ${formatPercentFromFraction(r.yieldLiquidoAnual)} a.a.`,
     `Margem financeira: ${formatBRL(r.margemFinanceira)} (${formatPercentFromFraction(r.descontoPct)})`,
     `Desconto: ${formatPercentFromFraction(r.descontoPct)} (${discountClass.emoji} ${discountClass.label})`,
+    r.descontoM2 !== null
+      ? `Desconto no m²: ${formatPercentFromFraction(r.descontoM2)}`
+      : null,
     `Patrimônio controlado: ${formatBRL(r.patrimonioControlado)}`,
     `Alavancagem: ${formatLeverage(r.alavancagem)}`,
     `ICP (cobertura da parcela): ${formatRatio(r.icp)}${icpClass ? ` (${icpClass.emoji} ${icpClass.label})` : ''}`,
     '',
     '— RESUMO EXECUTIVO —',
     resumo,
-  ];
+  ].filter((linha): linha is string => linha !== null);
 
   return linhas.join('\n');
 }

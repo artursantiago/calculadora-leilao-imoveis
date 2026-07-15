@@ -6,6 +6,9 @@ import type { Classification, ClassColor, FormState } from './types';
 export const DEFAULTS = {
   comissaoPct: 5,
   assessoriaPct: 15,
+  itbiPct: 3,
+  entradaPct: 20,
+  prazoMeses: 420,
   administracaoPct: 10,
   vacanciaPct: 5,
 } as const;
@@ -15,20 +18,19 @@ export const defaultFormState: FormState = {
   avaliacaoBanco: 0,
   valorMercado: null,
   area: 0,
-  cidade: '',
-  bairro: '',
 
   comissao: { mode: 'percent', value: DEFAULTS.comissaoPct },
   assessoria: { mode: 'percent', value: DEFAULTS.assessoriaPct },
   reforma: 0,
   desocupacao: 0,
-  itbi: 0,
+  itbi: { mode: 'percent', value: DEFAULTS.itbiPct },
   registro: 0,
   outros: 0,
 
-  entrada: { mode: 'percent', value: 20 },
-  prazoMeses: 360,
-  taxaJurosAnual: null,
+  paymentMode: 'financed',
+  entrada: { mode: 'percent', value: DEFAULTS.entradaPct },
+  prazoMeses: DEFAULTS.prazoMeses,
+  taxaJurosMensal: null,
   parcela: null,
 
   aluguel: 0,
@@ -38,6 +40,7 @@ export const defaultFormState: FormState = {
   seguro: 0,
   reservaManutencao: { mode: 'value', value: 0 },
   vacancia: DEFAULTS.vacanciaPct,
+  primeiroAluguelImobiliaria: true,
 };
 
 // ---------------------------------------------------------------------------

@@ -16,14 +16,21 @@ export function effectiveMarketValue(form: FormState): number {
 /** Executa todas as regras de negócio e devolve os resultados. */
 export function computeResults(form: FormState): Results {
   const arrematacao = form.arrematacao;
+  const financiado = form.paymentMode === 'financed';
 
   // Custos sobre a arrematação
   const comissaoValor = resolveDual(form.comissao, arrematacao);
   const assessoriaValor = resolveDual(form.assessoria, arrematacao);
+  const itbiValor = resolveDual(form.itbi, arrematacao);
 
-  // Financiamento
-  const entradaValor = resolveDual(form.entrada, arrematacao);
-  const valorFinanciado = Math.max(arrematacao - entradaValor, 0);
+  // Financiamento. À vista: nada é financiado, a arrematação inteira sai do bolso.
+  const entradaValor = financiado
+    ? resolveDual(form.entrada, arrematacao)
+    : arrematacao;
+  const valorFinanciado = financiado ? Math.max(arrematacao - entradaValor, 0) : 0;
+
+  // Receita perdida no 1º mês (aluguel destinado à imobiliária).
+  const receitaPerdidaPrimeiroMes = form.primeiroAluguelImobiliaria ? form.aluguel : 0;
 
   // Investimento total = arrematação + todos os custos de aquisição
   const investimentoTotal =
@@ -32,21 +39,22 @@ export function computeResults(form: FormState): Results {
     assessoriaValor +
     form.reforma +
     form.desocupacao +
-    form.itbi +
+    itbiValor +
     form.registro +
     form.outros;
 
   // Capital inicial = o que sai do bolso antes da renda começar
-  // (entrada + custos não financiados; NÃO inclui o valor financiado).
+  // (entrada + custos não financiados + 1º aluguel; NÃO inclui o valor financiado).
   const capitalInicial =
     entradaValor +
     comissaoValor +
     assessoriaValor +
-    form.itbi +
+    itbiValor +
     form.registro +
     form.reforma +
     form.desocupacao +
-    form.outros;
+    form.outros +
+    receitaPerdidaPrimeiroMes;
 
   // Receita
   const administracaoValor = (form.aluguel * form.administracao) / 100;
@@ -62,13 +70,15 @@ export function computeResults(form: FormState): Results {
     reservaManutencaoValor -
     vacanciaValor;
 
-  // Parcela e fluxo de caixa
-  const parcela = resolveParcela({
-    parcela: form.parcela,
-    valorFinanciado,
-    taxaJurosAnual: form.taxaJurosAnual,
-    prazoMeses: form.prazoMeses,
-  });
+  // Parcela e fluxo de caixa (à vista → sem parcela)
+  const parcela = financiado
+    ? resolveParcela({
+        parcela: form.parcela,
+        valorFinanciado,
+        taxaJurosMensal: form.taxaJurosMensal,
+        prazoMeses: form.prazoMeses,
+      })
+    : 0;
   const fluxoCaixa = receitaLiquida - parcela;
 
   // Yields
@@ -88,13 +98,27 @@ export function computeResults(form: FormState): Results {
   const alavancagem = capitalInicial > 0 ? valorMercadoEfetivo / capitalInicial : null;
   const icp = parcela > 0 ? receitaLiquida / parcela : null;
 
+  // Preço por m²
+  const precoM2Arrematacao = form.area > 0 ? arrematacao / form.area : null;
+  const precoM2Mercado = form.area > 0 ? valorMercadoEfetivo / form.area : null;
+  const descontoM2 =
+    precoM2Mercado !== null && precoM2Mercado > 0 && precoM2Arrematacao !== null
+      ? (precoM2Mercado - precoM2Arrematacao) / precoM2Mercado
+      : null;
+
   return {
+    financiado,
     comissaoValor,
     assessoriaValor,
+    itbiValor,
     entradaValor,
     valorFinanciado,
     investimentoTotal,
     capitalInicial,
+    receitaPerdidaPrimeiroMes,
+    precoM2Arrematacao,
+    precoM2Mercado,
+    descontoM2,
     administracaoValor,
     reservaManutencaoValor,
     vacanciaValor,

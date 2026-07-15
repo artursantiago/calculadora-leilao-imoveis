@@ -1,5 +1,5 @@
 import type { FormState } from '../../types';
-import { CurrencyInput, Field, NumberInput, ToggleAmountInput } from './inputs';
+import { Checkbox, CurrencyInput, Field, NumberInput, ToggleAmountInput } from './inputs';
 import { Section } from './Section';
 
 interface Props {
@@ -45,6 +45,16 @@ export function RevenueSection({ form, setField }: Props) {
           suffix="%"
         />
       </Field>
+      <div className="flex flex-col justify-end sm:col-span-2">
+        <Checkbox
+          label="Primeiro aluguel destinado à imobiliária"
+          checked={form.primeiroAluguelImobiliaria}
+          onChange={(v) => setField({ primeiroAluguelImobiliaria: v })}
+        />
+        <span className="mt-1 text-xs text-slate-400">
+          Some ao capital inicial como receita perdida no 1º mês; não afeta o yield.
+        </span>
+      </div>
     </Section>
   );
 }

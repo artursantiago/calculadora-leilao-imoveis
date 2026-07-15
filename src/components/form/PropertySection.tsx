@@ -1,5 +1,5 @@
 import type { FormState } from '../../types';
-import { CurrencyInput, Field, NumberInput, TextInput } from './inputs';
+import { CurrencyInput, Field, NumberInput } from './inputs';
 import { Section } from './Section';
 
 interface Props {
@@ -28,14 +28,8 @@ export function PropertySection({ form, setField }: Props) {
           onChange={(v) => setField({ valorMercado: v > 0 ? v : null })}
         />
       </Field>
-      <Field label="Área (m²)">
+      <Field label="Área (m²)" hint="Usada no cálculo de preço por m².">
         <NumberInput value={form.area} onChange={(v) => setField({ area: v })} />
-      </Field>
-      <Field label="Cidade">
-        <TextInput value={form.cidade} onChange={(v) => setField({ cidade: v })} />
-      </Field>
-      <Field label="Bairro">
-        <TextInput value={form.bairro} onChange={(v) => setField({ bairro: v })} />
       </Field>
     </Section>
   );

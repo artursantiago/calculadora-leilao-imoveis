@@ -1,10 +1,5 @@
 // Cálculo da parcela do financiamento (Tabela Price).
 
-/** Converte taxa nominal anual (%) em taxa efetiva mensal (fração). */
-export function monthlyRateFromAnnual(annualPercent: number): number {
-  return Math.pow(1 + annualPercent / 100, 1 / 12) - 1;
-}
-
 /**
  * Parcela fixa da Tabela Price.
  * PMT = PV·i / (1 − (1+i)^−n)
@@ -18,23 +13,23 @@ export function pmt(pv: number, monthlyRate: number, months: number): number {
 interface ParcelaInput {
   parcela: number | null;
   valorFinanciado: number;
-  taxaJurosAnual: number | null;
+  taxaJurosMensal: number | null; // % ao mês
   prazoMeses: number;
 }
 
 /**
  * Resolve a parcela mensal:
  * - se informada explicitamente, usa-a;
- * - caso contrário calcula via Tabela Price a partir da taxa anual e do prazo;
+ * - caso contrário calcula via Tabela Price a partir da taxa mensal e do prazo;
  * - se não houver dados suficientes, retorna 0.
  */
 export function resolveParcela({
   parcela,
   valorFinanciado,
-  taxaJurosAnual,
+  taxaJurosMensal,
   prazoMeses,
 }: ParcelaInput): number {
   if (parcela !== null && parcela > 0) return parcela;
-  if (taxaJurosAnual === null || prazoMeses <= 0 || valorFinanciado <= 0) return 0;
-  return pmt(valorFinanciado, monthlyRateFromAnnual(taxaJurosAnual), prazoMeses);
+  if (taxaJurosMensal === null || prazoMeses <= 0 || valorFinanciado <= 0) return 0;
+  return pmt(valorFinanciado, taxaJurosMensal / 100, prazoMeses);
 }

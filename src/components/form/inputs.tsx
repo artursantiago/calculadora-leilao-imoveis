@@ -117,6 +117,65 @@ export function NumberInput({ value, onChange, placeholder, suffix }: NumberInpu
   );
 }
 
+// --- Checkbox -------------------------------------------------------------
+interface CheckboxProps {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}
+
+export function Checkbox({ label, checked, onChange }: CheckboxProps) {
+  return (
+    <label className="flex cursor-pointer items-center gap-2">
+      <input
+        type="checkbox"
+        className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-200"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <span className="text-sm font-medium text-slate-700">{label}</span>
+    </label>
+  );
+}
+
+// --- Controle segmentado (ex.: À vista / Financiado) ----------------------
+interface SegmentedOption<T extends string> {
+  value: T;
+  label: string;
+}
+
+interface SegmentedControlProps<T extends string> {
+  options: SegmentedOption<T>[];
+  value: T;
+  onChange: (value: T) => void;
+}
+
+export function SegmentedControl<T extends string>({
+  options,
+  value,
+  onChange,
+}: SegmentedControlProps<T>) {
+  return (
+    <div className="inline-flex overflow-hidden rounded-lg border border-slate-300">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={
+            'px-4 py-2 text-sm font-medium transition ' +
+            (value === opt.value
+              ? 'bg-indigo-600 text-white'
+              : 'bg-white text-slate-600 hover:bg-slate-50')
+          }
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // --- Campo "% ou R$" com alternância --------------------------------------
 interface ToggleAmountInputProps {
   label: string;
