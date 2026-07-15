@@ -1,4 +1,5 @@
 import type { FormState, Results } from '../types';
+import { irAluguelMensal } from './tax';
 
 export interface ComparisonAssumptions {
   valorizacaoAnual: number; // % a.a. (imóvel)
@@ -6,6 +7,8 @@ export interface ComparisonAssumptions {
   rendaFixaAnual: number; // % a.a.
   anos: number;
   reinvestirFluxoPositivo: boolean;
+  descontarIR: boolean; // aplica IR (renda fixa no resgate; aluguel carnê-leão)
+  irRendaFixa: number; // % sobre o rendimento da renda fixa
 }
 
 export interface SeriesPoint {
@@ -42,6 +45,10 @@ export interface ComparisonResult {
     jurosGanhos: number;
   };
 
+  // Impostos estimados no período.
+  impostoAluguel: number;
+  impostoRendaFixa: number;
+
   // Primeiro mês em que o imóvel supera a renda fixa (null se nunca supera).
   mesCruzamento: number | null;
 }
@@ -66,13 +73,21 @@ export function computeComparison(
   let saldo = financiado ? results.valorFinanciado : 0;
   let receitaLiq = results.receitaLiquida;
 
-  let caixaImovel = 0; // fluxos positivos retidos
+  const irRF = a.descontarIR ? a.irRendaFixa / 100 : 0;
+
+  let caixaImovel = 0; // fluxos positivos retidos (líquidos de IR)
   let aportesAcum = 0; // soma dos fluxos negativos (desembolso extra)
   let amortizAcum = 0; // principal amortizado (patrimônio via dívida)
-  let alugueisAcum = 0; // receita líquida acumulada
+  let alugueisAcum = 0; // receita líquida de IR acumulada
   let fluxoAcum = 0; // soma de todos os fluxos (pode ser negativa)
+  let impostoAluguel = 0; // IR do aluguel acumulado
 
-  let rf = capitalInicial;
+  let rf = capitalInicial; // saldo bruto da renda fixa
+  let capInvestido = capitalInicial; // capital efetivamente aportado até o mês
+
+  // Valor de resgate líquido de IR da renda fixa (IR só sobre o rendimento).
+  const rfLiquido = (bruto: number, capital: number) =>
+    capital + Math.max(bruto - capital, 0) * (1 - irRF);
 
   const series: SeriesPoint[] = [
     { mes: 0, imovel: propValue - saldo, rendaFixa: capitalInicial },
@@ -97,26 +112,37 @@ export function computeComparison(
       parcela = results.parcela;
     }
 
-    const fluxo = receitaLiq - parcela;
-    alugueisAcum += receitaLiq;
+    // IR sobre o aluguel (carnê-leão) — a valorização não é tributada (não há venda).
+    const irMes = a.descontarIR ? irAluguelMensal(receitaLiq) : 0;
+    const receitaLiqNet = receitaLiq - irMes;
+    impostoAluguel += irMes;
+
+    const fluxo = receitaLiqNet - parcela;
+    alugueisAcum += receitaLiqNet;
     fluxoAcum += fluxo;
 
-    // Renda fixa cresce e recebe o mesmo desembolso.
+    // Renda fixa cresce (bruto) e recebe o mesmo desembolso.
     rf *= 1 + rfM;
     if (fluxo < 0) {
       aportesAcum += -fluxo;
+      capInvestido += -fluxo;
       rf += -fluxo; // aporte para cobrir o déficit (mesmo desembolso)
     } else {
       caixaImovel += fluxo;
       if (a.reinvestirFluxoPositivo) rf += fluxo; // renda reinvestida
     }
 
-    series.push({ mes: m, imovel: propValue - saldo + caixaImovel, rendaFixa: rf });
+    series.push({
+      mes: m,
+      imovel: propValue - saldo + caixaImovel,
+      rendaFixa: rfLiquido(rf, capInvestido),
+    });
   }
 
-  const capitalInvestido = capitalInicial + aportesAcum;
+  const capitalInvestido = capInvestido;
   const patrimonioImovel = propValue - saldo + caixaImovel;
-  const patrimonioRF = rf;
+  const patrimonioRF = rfLiquido(rf, capInvestido);
+  const impostoRendaFixa = rf - patrimonioRF;
 
   const valorizacao = propValue - valorMercado0;
   const amortizacao = amortizAcum;
@@ -156,6 +182,8 @@ export function computeComparison(
       roi: capitalInvestido > 0 ? (patrimonioRF - capitalInvestido) / capitalInvestido : 0,
       jurosGanhos: patrimonioRF - capitalInvestido,
     },
+    impostoAluguel,
+    impostoRendaFixa,
     mesCruzamento,
   };
 }

@@ -67,6 +67,8 @@ export function ComparisonSection({ form, results }: { form: FormState; results:
   const [reajuste, setReajuste] = useState(FALLBACK_RATES.ipca);
   const [anos, setAnos] = useState(20);
   const [reinvestir, setReinvestir] = useState(true);
+  const [descontarIR, setDescontarIR] = useState(true);
+  const [irRendaFixa, setIrRendaFixa] = useState(15);
 
   // Busca as taxas do Banco Central na primeira vez que a seção é aberta.
   useEffect(() => {
@@ -95,8 +97,10 @@ export function ComparisonSection({ form, results }: { form: FormState; results:
         rendaFixaAnual,
         anos,
         reinvestirFluxoPositivo: reinvestir,
+        descontarIR,
+        irRendaFixa,
       }),
-    [form, results, valorizacao, reajuste, rendaFixaAnual, anos, reinvestir],
+    [form, results, valorizacao, reajuste, rendaFixaAnual, anos, reinvestir, descontarIR, irRendaFixa],
   );
 
   return (
@@ -189,6 +193,28 @@ export function ComparisonSection({ form, results }: { form: FormState; results:
                 onChange={setReinvestir}
               />
             </div>
+
+            <div className="flex items-end">
+              <Checkbox
+                label="Descontar imposto de renda"
+                checked={descontarIR}
+                onChange={setDescontarIR}
+              />
+            </div>
+
+            {descontarIR && (
+              <Field
+                label="IR sobre renda fixa"
+                hint={
+                  <span className="inline-flex items-center gap-1">
+                    Aluguel usa carnê-leão automático{' '}
+                    <InfoTooltip text="Renda fixa: IR sobre o rendimento no resgate (15% para prazos acima de 2 anos, tabela regressiva). Aluguel: tabela progressiva do carnê-leão (isento até ~R$ 2.259/mês, até 27,5%). A valorização do imóvel não é tributada enquanto não há venda." />
+                  </span>
+                }
+              >
+                <NumberInput value={irRendaFixa} onChange={setIrRendaFixa} suffix="%" />
+              </Field>
+            )}
           </div>
 
           {/* Comparativo final */}
@@ -263,6 +289,16 @@ export function ComparisonSection({ form, results }: { form: FormState; results:
             </p>
           </div>
 
+          {/* Impostos */}
+          {descontarIR && (
+            <p className="text-xs text-slate-500">
+              IR estimado no período — aluguel (carnê-leão): {formatBRL(comp.impostoAluguel)} ·
+              renda fixa ({formatPercentValue(irRendaFixa)} no resgate):{' '}
+              {formatBRL(comp.impostoRendaFixa)}. A valorização do imóvel não é tributada
+              enquanto não há venda.
+            </p>
+          )}
+
           {/* Fontes */}
           <p className="text-xs text-slate-400">
             Renda fixa:{' '}
@@ -273,7 +309,8 @@ export function ComparisonSection({ form, results }: { form: FormState; results:
               : `valores de referência (não foi possível atualizar automaticamente): Selic ${formatPercentValue(
                   rates.selic,
                 )}, CDI ${formatPercentValue(rates.cdi)}, IPCA ${formatPercentValue(rates.ipca)}.`}{' '}
-            Valorização: {FIPEZAP_SOURCE}. Comparação bruta (sem imposto de renda), premissas
+            Valorização: {FIPEZAP_SOURCE}.{' '}
+            {descontarIR ? 'Comparação líquida de IR' : 'Comparação bruta (sem IR)'}; premissas
             editáveis.
           </p>
         </div>
