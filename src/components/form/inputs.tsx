@@ -9,7 +9,7 @@ const inputClass =
 
 interface FieldProps {
   label: string;
-  hint?: string;
+  hint?: ReactNode;
   children: ReactNode;
 }
 

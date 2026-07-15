@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { Header } from './components/Header';
 import { BidStrategySection } from './components/BidStrategySection';
+import { ComparisonSection } from './components/comparison/ComparisonSection';
 import { CostsSection } from './components/form/CostsSection';
 import { FinancingSection } from './components/form/FinancingSection';
 import { PropertySection } from './components/form/PropertySection';
@@ -49,6 +50,7 @@ export default function App() {
               <ResultsPanel form={form} results={results} />
               <BidStrategySection form={form} setField={setField} />
               <ExportButtons form={form} results={results} />
+              <ComparisonSection form={form} results={results} />
             </div>
           )}
         </div>
